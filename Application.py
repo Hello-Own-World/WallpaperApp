@@ -4,17 +4,21 @@ import ctypes
 from PyQt5 import uic, QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QIcon
-
+from PyQt5.QtCore import *
 
 class App(QMainWindow):
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         super(App, self).__init__()
+        self.args = args
+        self.kwargs = kwargs
+        self.threadpool = QThreadPool()
+        print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
 
         uic.loadUi("C:\\Users\\yushc\\PycharmProjects\\works\\PyQt5projects\\WallpaperApp\\untitled.ui", self)
 
         self.button1 = self.findChild(QtWidgets.QPushButton, "pushButton_3")
-        self.button1.clicked.connect(engine.mainloop)
+        self.button1.clicked.connect(Engine.mainloop)
 
         self.path_to_icon = "C:\\Users\\yushc\\PycharmProjects\\works\\PyQt5projects\\WallpaperApp\\circle.png"
         self.title = "WallpaperApp"
@@ -26,9 +30,13 @@ class App(QMainWindow):
         self.setWindowIcon(QIcon(self.path_to_icon))
 
 
-class engine():
+class Engine(QRunnable):
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super(Engine, self).__init__()
+        self.args = args
+        self.kwargs = kwargs
+
         """Default settings"""
         self.SPI_SETDESKWALLPAPER = 20
         self.ph_amount = 6
@@ -44,24 +52,27 @@ class engine():
     def print_(self):
         print('1')
 
-
     def change_BG(self, i):
         ctypes.windll.user32.SystemParametersInfoW(self.SPI_SETDESKWALLPAPER, 0, self.path[i], 3)
 
     def mainloop(self):
-        #while True:
-        hour = time.localtime()
-        for i in range(0, self.ph_amount):
-            if self.time_period3[i] <= hour[3] < self.time_period3[i + 1]:
-                self.change_BG(i)
-                print(hour, i)  # Marker
-                #time.sleep(((self.time_period3[i + 1] - hour[3]) * 60 - hour[4]) * 60)  # wait to next turn
+        worker = Engine()
+        self.threadpool.start(worker)
 
+        '''
+        while True:
+            hour = time.localtime()
+            for i in range(0, self.ph_amount):
+                if self.time_period3[i] <= hour[3] < self.time_period3[i + 1]:
+                    self.change_BG(i)
+                    print(hour, i)  # Marker
+                    time.sleep(((self.time_period3[i + 1] - hour[3]) * 60 - hour[4]) * 60)  # wait to next turn
+'''
 
 def main():
     app = QApplication(sys.argv)
     window = App()
-    eng = engine()
+    eng = Engine()
     sys.exit(app.exec_())
 
 
